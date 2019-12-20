@@ -20,6 +20,7 @@ EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.995
 
+q_val_log=1
 
 class DQNSolver:
 
@@ -49,9 +50,14 @@ class DQNSolver:
             for entry in self.memory:
                 f.write(str(entry))
                 f.write("\n")
+        with open('q_log_mem.txt','w') as f:
+            for entry in q_val_log:
+                f.write(str(entry))
+                f.write("\n")
 
 
     def experience_replay(self):
+        global q_val_log
         if len(self.memory) < BATCH_SIZE:
             return
         batch = random.sample(self.memory, BATCH_SIZE)
@@ -61,6 +67,7 @@ class DQNSolver:
                 q_update = (reward + GAMMA * np.amax(self.model.predict(state_next)[0]))
             q_values = self.model.predict(state)
             q_values[0][action] = q_update
+            q_val_log = q_values
             self.model.fit(state, q_values, verbose=0)
         self.exploration_rate *= EXPLORATION_DECAY
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
