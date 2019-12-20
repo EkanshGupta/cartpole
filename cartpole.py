@@ -5,8 +5,7 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
-
-
+import sys
 from scores.score_logger import ScoreLogger
 
 ENV_NAME = "CartPole-v1"
@@ -45,6 +44,13 @@ class DQNSolver:
         q_values = self.model.predict(state)
         return np.argmax(q_values[0])
 
+    def log_to_file(self):
+        with open('log_mem.txt','w') as f:
+            for entry in self.memory:
+                f.write(str(entry))
+                f.write("\n")
+
+
     def experience_replay(self):
         if len(self.memory) < BATCH_SIZE:
             return
@@ -65,6 +71,7 @@ def cartpole():
     score_logger = ScoreLogger(ENV_NAME)
     observation_space = env.observation_space.shape[0]
     action_space = env.action_space.n
+    print("obs: "+str(observation_space)+" action: "+str(action_space))
     dqn_solver = DQNSolver(observation_space, action_space)
     run = 0
     while True:
@@ -74,7 +81,7 @@ def cartpole():
         step = 0
         while True:
             step += 1
-            env.render()
+            #env.render()
             action = dqn_solver.act(state)
             state_next, reward, terminal, info = env.step(action)
             reward = reward if not terminal else -reward
@@ -84,6 +91,9 @@ def cartpole():
             if terminal:
                 print("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(step))
                 score_logger.add_score(step, run)
+                if step > 150:
+                    dqn_solver.log_to_file()
+                    sys.exit()
                 break
             dqn_solver.experience_replay()
 
